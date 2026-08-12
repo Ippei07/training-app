@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/date";
+import { buildTomorrowTasks } from "@/lib/tomorrowTasks";
 import { cardClass } from "@/lib/ui";
 
 const mealTypeLabel: Record<string, string> = {
@@ -39,6 +40,11 @@ export default async function HomePage() {
   ]);
 
   const totalCalorie = (meals ?? []).reduce((sum, m) => sum + (m.calorie_kcal ?? 0), 0);
+  const tomorrowTasks = buildTomorrowTasks({
+    hasWeightToday: !!weight,
+    hasWorkoutToday: (workouts?.length ?? 0) > 0,
+    mealCount: meals?.length ?? 0,
+  });
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -106,6 +112,17 @@ export default async function HomePage() {
         ) : (
           <p className="text-sm text-gray-400">まだ記録がありません</p>
         )}
+      </section>
+
+      <section className={cardClass}>
+        <h2 className="mb-2 font-semibold">明日やること</h2>
+        <ul className="flex flex-col gap-1">
+          {tomorrowTasks.map((task) => (
+            <li key={task} className="text-sm">
+              ・{task}
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );

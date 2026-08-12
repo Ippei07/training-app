@@ -3,9 +3,13 @@ import { todayISO } from "@/lib/date";
 import { addWeightLog, deleteWeightLog } from "@/app/actions/weight";
 import { inputClass, labelClass, primaryButtonClass, cardClass } from "@/lib/ui";
 
+function str(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : "";
+}
+
 export default async function WeightPage(props: PageProps<"/weight">) {
   const searchParams = await props.searchParams;
-  const error = typeof searchParams.error === "string" ? searchParams.error : undefined;
+  const error = str(searchParams.error) || undefined;
 
   const supabase = await createClient();
   const {
@@ -20,7 +24,8 @@ export default async function WeightPage(props: PageProps<"/weight">) {
     .order("recorded_on", { ascending: false })
     .limit(30);
 
-  const todayLog = logs?.find((l) => l.recorded_on === today);
+  const targetDate = str(searchParams.date) || today;
+  const targetLog = logs?.find((l) => l.recorded_on === targetDate);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -30,12 +35,21 @@ export default async function WeightPage(props: PageProps<"/weight">) {
         <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       )}
 
-      <form action={addWeightLog} className={`${cardClass} flex flex-col gap-3`}>
-        <input type="hidden" name="recorded_on" value={today} />
+      <form key={targetDate} action={addWeightLog} className={`${cardClass} flex flex-col gap-3`}>
         <div>
-          <label htmlFor="weight_kg" className={labelClass}>
-            体重(kg) - {today}
-          </label>
+          <label htmlFor="recorded_on" className={labelClass}>日付</label>
+          <input
+            id="recorded_on"
+            name="recorded_on"
+            type="date"
+            required
+            defaultValue={targetDate}
+            max={today}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="weight_kg" className={labelClass}>体重(kg)</label>
           <input
             id="weight_kg"
             name="weight_kg"
@@ -43,16 +57,16 @@ export default async function WeightPage(props: PageProps<"/weight">) {
             step="0.1"
             min="0"
             required
-            defaultValue={todayLog?.weight_kg ?? ""}
+            defaultValue={targetLog?.weight_kg ?? ""}
             className={inputClass}
           />
         </div>
         <div>
           <label htmlFor="memo" className={labelClass}>メモ（任意）</label>
-          <input id="memo" name="memo" type="text" defaultValue={todayLog?.memo ?? ""} className={inputClass} />
+          <input id="memo" name="memo" type="text" defaultValue={targetLog?.memo ?? ""} className={inputClass} />
         </div>
         <button type="submit" className={primaryButtonClass}>
-          {todayLog ? "今日の記録を更新" : "記録する"}
+          {targetLog ? `${targetDate}の記録を更新` : `${targetDate}に記録する`}
         </button>
       </form>
 
@@ -67,12 +81,17 @@ export default async function WeightPage(props: PageProps<"/weight">) {
                   <p className="text-lg font-semibold">{log.weight_kg} kg</p>
                   {log.memo && <p className="text-sm text-gray-500">{log.memo}</p>}
                 </div>
-                <form action={deleteWeightLog}>
-                  <input type="hidden" name="id" value={log.id} />
-                  <button type="submit" className="text-sm text-red-500">
-                    削除
-                  </button>
-                </form>
+                <div className="flex items-center gap-3">
+                  <a href={`/weight?date=${log.recorded_on}`} className="text-sm text-blue-600">
+                    編集
+                  </a>
+                  <form action={deleteWeightLog}>
+                    <input type="hidden" name="id" value={log.id} />
+                    <button type="submit" className="text-sm text-red-500">
+                      削除
+                    </button>
+                  </form>
+                </div>
               </li>
             ))}
           </ul>

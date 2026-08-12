@@ -3,9 +3,17 @@ import { todayISO } from "@/lib/date";
 import { addWorkoutLog, deleteWorkoutLog } from "@/app/actions/workouts";
 import { inputClass, labelClass, primaryButtonClass, cardClass } from "@/lib/ui";
 
+function str(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : "";
+}
+
 export default async function WorkoutsPage(props: PageProps<"/workouts">) {
   const searchParams = await props.searchParams;
-  const error = typeof searchParams.error === "string" ? searchParams.error : undefined;
+  const error = str(searchParams.error) || undefined;
+  const prefillExercise = str(searchParams.exercise);
+  const prefillSets = str(searchParams.sets);
+  const prefillReps = str(searchParams.reps);
+  const prefillWeight = str(searchParams.weight_kg);
 
   const supabase = await createClient();
   const {
@@ -21,6 +29,15 @@ export default async function WorkoutsPage(props: PageProps<"/workouts">) {
     .order("created_at", { ascending: false })
     .limit(50);
 
+  const recentExercises: NonNullable<typeof logs> = [];
+  const seenExercises = new Set<string>();
+  for (const log of logs ?? []) {
+    if (seenExercises.has(log.exercise_name)) continue;
+    seenExercises.add(log.exercise_name);
+    recentExercises.push(log);
+    if (recentExercises.length >= 6) break;
+  }
+
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-xl font-bold">筋トレ記録</h1>
@@ -29,8 +46,23 @@ export default async function WorkoutsPage(props: PageProps<"/workouts">) {
         <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       )}
 
-      <form action={addWorkoutLog} className={`${cardClass} flex flex-col gap-3`}>
-        <input type="hidden" name="recorded_on" value={today} />
+      <form
+        key={`${prefillExercise}|${prefillSets}|${prefillReps}|${prefillWeight}`}
+        action={addWorkoutLog}
+        className={`${cardClass} flex flex-col gap-3`}
+      >
+        <div>
+          <label htmlFor="recorded_on" className={labelClass}>日付</label>
+          <input
+            id="recorded_on"
+            name="recorded_on"
+            type="date"
+            required
+            defaultValue={today}
+            max={today}
+            className={inputClass}
+          />
+        </div>
         <div>
           <label htmlFor="exercise_name" className={labelClass}>種目</label>
           <input
@@ -39,21 +71,30 @@ export default async function WorkoutsPage(props: PageProps<"/workouts">) {
             type="text"
             required
             placeholder="例: スクワット"
+            defaultValue={prefillExercise}
             className={inputClass}
           />
         </div>
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label htmlFor="sets" className={labelClass}>セット</label>
-            <input id="sets" name="sets" type="number" min="0" className={inputClass} />
+            <input id="sets" name="sets" type="number" min="0" defaultValue={prefillSets} className={inputClass} />
           </div>
           <div>
             <label htmlFor="reps" className={labelClass}>回数</label>
-            <input id="reps" name="reps" type="number" min="0" className={inputClass} />
+            <input id="reps" name="reps" type="number" min="0" defaultValue={prefillReps} className={inputClass} />
           </div>
           <div>
             <label htmlFor="weight_kg" className={labelClass}>重量(kg)</label>
-            <input id="weight_kg" name="weight_kg" type="number" step="0.5" min="0" className={inputClass} />
+            <input
+              id="weight_kg"
+              name="weight_kg"
+              type="number"
+              step="0.5"
+              min="0"
+              defaultValue={prefillWeight}
+              className={inputClass}
+            />
           </div>
         </div>
         <div>
@@ -64,6 +105,37 @@ export default async function WorkoutsPage(props: PageProps<"/workouts">) {
           記録する
         </button>
       </form>
+
+      {recentExercises.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="font-semibold">前回の記録</h2>
+          <ul className="flex flex-col gap-2">
+            {recentExercises.map((log) => {
+              const params = new URLSearchParams({ exercise: log.exercise_name });
+              if (log.sets) params.set("sets", String(log.sets));
+              if (log.reps) params.set("reps", String(log.reps));
+              if (log.weight_kg) params.set("weight_kg", String(log.weight_kg));
+
+              return (
+                <li key={log.id} className={`${cardClass} flex items-center justify-between`}>
+                  <div>
+                    <p className="font-medium">{log.exercise_name}</p>
+                    <p className="text-sm text-gray-500">
+                      {log.recorded_on}・
+                      {log.sets ? `${log.sets}セット` : ""}
+                      {log.reps ? ` × ${log.reps}回` : ""}
+                      {log.weight_kg ? ` × ${log.weight_kg}kg` : ""}
+                    </p>
+                  </div>
+                  <a href={`/workouts?${params.toString()}`} className="text-sm text-blue-600">
+                    同じ内容を入力
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">記録一覧</h2>

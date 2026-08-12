@@ -37,7 +37,18 @@ export default async function MealsPage(props: PageProps<"/meals">) {
       )}
 
       <form action={addMealLog} className={`${cardClass} flex flex-col gap-3`}>
-        <input type="hidden" name="recorded_on" value={today} />
+        <div>
+          <label htmlFor="recorded_on" className={labelClass}>日付</label>
+          <input
+            id="recorded_on"
+            name="recorded_on"
+            type="date"
+            required
+            defaultValue={today}
+            max={today}
+            className={inputClass}
+          />
+        </div>
         <div>
           <label htmlFor="meal_type" className={labelClass}>区分</label>
           <select id="meal_type" name="meal_type" required className={inputClass} defaultValue="">
