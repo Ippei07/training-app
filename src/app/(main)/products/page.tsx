@@ -1,37 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/date";
-
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  description: string;
-  tags: string[];
-};
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "ホエイプロテイン(ダミー)",
-    price: 3980,
-    description: "筋トレ後の栄養補給に。MVPでは購入はできません。",
-    tags: ["workout", "low-calorie"],
-  },
-  {
-    id: 2,
-    name: "トレーニングチューブセット(ダミー)",
-    price: 2480,
-    description: "自宅トレの負荷アップに。MVPでは購入はできません。",
-    tags: ["workout"],
-  },
-  {
-    id: 3,
-    name: "体組成計(ダミー)",
-    price: 5980,
-    description: "体重・体脂肪の記録に。MVPでは購入はできません。",
-    tags: ["no-weight"],
-  },
-];
+import { products, sortProductsByRelevance } from "@/lib/products";
 
 export default async function ProductsPage() {
   const supabase = await createClient();
@@ -67,11 +36,7 @@ export default async function ProductsPage() {
   if (!weight) activeTags.add("no-weight");
   if ((meals?.length ?? 0) === 0 || totalCalorie < 1200) activeTags.add("low-calorie");
 
-  const sortedProducts = [...products].sort((a, b) => {
-    const aMatch = a.tags.some((tag) => activeTags.has(tag)) ? 1 : 0;
-    const bMatch = b.tags.some((tag) => activeTags.has(tag)) ? 1 : 0;
-    return bMatch - aMatch;
-  });
+  const sortedProducts = sortProductsByRelevance(products, activeTags);
 
   return (
     <div className="flex flex-col gap-4 p-4">
