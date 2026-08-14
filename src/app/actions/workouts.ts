@@ -39,7 +39,7 @@ export async function addWorkoutLog(formData: FormData) {
 
   revalidatePath("/workouts");
   revalidatePath("/");
-  redirect("/workouts");
+  redirect("/workouts?saved=1");
 }
 
 export async function deleteWorkoutLog(formData: FormData) {
