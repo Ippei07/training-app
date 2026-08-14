@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/date";
 import { addMealLog, deleteMealLog } from "@/app/actions/meals";
-import { inputClass, labelClass, primaryButtonClass, cardClass } from "@/lib/ui";
+import { inputClass, labelClass, primaryButtonClass, cardClass, dangerLinkClass } from "@/lib/ui";
 
 const mealTypeLabel: Record<string, string> = {
   breakfast: "朝食",
@@ -103,7 +103,7 @@ export default async function MealsPage(props: PageProps<"/meals">) {
                 </div>
                 <form action={deleteMealLog}>
                   <input type="hidden" name="id" value={log.id} />
-                  <button type="submit" className="text-sm text-red-500">
+                  <button type="submit" className={dangerLinkClass}>
                     削除
                   </button>
                 </form>

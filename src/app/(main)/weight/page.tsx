@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/date";
 import { addWeightLog, deleteWeightLog } from "@/app/actions/weight";
-import { inputClass, labelClass, primaryButtonClass, cardClass } from "@/lib/ui";
+import { inputClass, labelClass, primaryButtonClass, cardClass, dangerLinkClass } from "@/lib/ui";
 
 function str(value: string | string[] | undefined) {
   return typeof value === "string" ? value : "";
@@ -82,12 +82,12 @@ export default async function WeightPage(props: PageProps<"/weight">) {
                   {log.memo && <p className="text-sm text-gray-500">{log.memo}</p>}
                 </div>
                 <div className="flex items-center gap-3">
-                  <a href={`/weight?date=${log.recorded_on}`} className="text-sm text-blue-600">
+                  <a href={`/weight?date=${log.recorded_on}`} className="text-sm text-info">
                     編集
                   </a>
                   <form action={deleteWeightLog}>
                     <input type="hidden" name="id" value={log.id} />
-                    <button type="submit" className="text-sm text-red-500">
+                    <button type="submit" className={dangerLinkClass}>
                       削除
                     </button>
                   </form>
